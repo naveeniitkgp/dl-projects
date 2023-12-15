@@ -5,7 +5,7 @@ import torch                                                  # PyTorch
 import torch.nn as nn                                         # Call neural network module
 import torch.optim as optim                                   # For optimization
 from torchinfo import summary                                 # To get the summary of the neural network
-from torch.utils.data import DataLoader, TensorDataset        # 
+from torch.utils.data import DataLoader, TensorDataset        #
 
 # Other imports
 import os
