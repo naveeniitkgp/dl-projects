@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 plot = False
 
 CSD = os.path.dirname(__file__)
-DATAGEN_DIR = os.path.join(CSD, "data")
+BDR = os.path.dirname(CSD)
+DATAGEN_DIR = os.path.join(BDR, "data")
 
 L1 = 5
 L2 = 3
@@ -23,13 +24,15 @@ A, B = np.meshgrid(a, b)
 A_flat = A.flatten()
 B_flat = B.flatten()
 
-theta_1 = A_flat.reshape(N * N, 1)
-theta_2 = B_flat.reshape(N * N, 1)
+theta_1 = A.flatten()
+theta_2 = B.flatten()
 
 X = L1 * np.cos(theta_1) + L2 * np.cos(theta_1 + theta_2)
 Y = L1 * np.sin(theta_1) + L2 * np.sin(theta_1 + theta_2)
 
-np.save(os.path.join(DATAGEN_DIR, 'DataN200.npy'), [theta_1, theta_2, X, Y])
+stacked_data = np.stack((theta_1, theta_2, X, Y), axis=1)
+
+np.save(os.path.join(DATAGEN_DIR, 'DataN200.npy'), stacked_data)
 
 if plot:
     plt.scatter(X, Y, marker='.')
