@@ -21,9 +21,6 @@ b = a
 
 A, B = np.meshgrid(a, b)
 
-A_flat = A.flatten()
-B_flat = B.flatten()
-
 theta_1 = A.flatten()
 theta_2 = B.flatten()
 
