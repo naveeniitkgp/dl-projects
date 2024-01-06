@@ -1,5 +1,5 @@
-# https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html
 # https://machinelearningmastery.com/pytorch-tutorial-develop-deep-learning-models/
+# https://github.com/mmc-group/inverse-designed-spinodoids
 
 # PyTorch Imports
 import torch                                                  # PyTorch
@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, TensorDataset        #
 # Other imports
 import os
 import sys
+import time
 import timeit
 import argparse
 import numpy as np
@@ -24,45 +25,91 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser(description='Training Parameters')
 parser.add_argument('--batch_size', type=int, default=32, help='Batch size: Default: 32')
 parser.add_argument('--num_epochs', type=int, default=500, help='Number of Epochs: Default: 500')
-parser.add_argument('--lr', type=float, default=0.01, help='Learning rate: Default: 0.01')
+parser.add_argument('--lr', type=float, default=0.001, help='Learning rate: Default: 0.001')
+parser.add_argument('--zeta_factor', type=float, default=0.2,
+                    help='percentage of epochs till zeta is used: Default: 0.2')
+parser.add_argument('--zeta', type=float, default=0.5, help='Zeta value: Default: 0.5')
+parser.add_argument('--dropout_rate', type=float, default=0.2, help='Dropout rate: Default: 0.2')
 #
 parser.add_argument('--results_suffix', type=str, default='#######', help='Suffix for results folder at each run')
+
 args = parser.parse_args()
+
+
+def fk(theta_1, theta_2):
+    L1 = 5
+    L2 = 3
+    X = L1 * torch.cos(theta_1) + L2 * torch.cos(theta_1 + theta_2)
+    Y = L1 * torch.sin(theta_1) + L2 * torch.sin(theta_1 + theta_2)
+    return X, Y
+
+
+class Normalization:
+    def __init__(self, data):
+        # Assuming data is a torch.Tensor
+        self.min = torch.min(data, dim=0)[0]
+        self.max = torch.max(data, dim=0)[0]
+
+    def normalize(self, data):
+        # Element-wise normalization
+        return (data - self.min) / (self.max - self.min)
+
+    def unnormalize(self, data):
+        # Element-wise denormalization
+        return data * (self.max - self.min) + self.min
 
 
 class inv2r_nn(nn.Module):
     def __init__(self):
         super(inv2r_nn, self).__init__()
         self.main = nn.Sequential(
-            nn.Linear(2, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
-            nn.Linear(256, 64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2),
-            nn.ReLU(),
+            nn.Linear(2, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 100, bias=False),
+            nn.BatchNorm1d(100),
+            nn.Softplus(),
+            nn.Dropout(args.dropout_rate),
+            nn.Linear(100, 2),
         )
-
-    # Apply He initialization to the layers
-        for layer in self.main:
-            if isinstance(layer, nn.Linear):
-                init.kaiming_normal_(layer.weight, nonlinearity='relu')
-                init.zeros_(layer.bias)
 
     def forward(self, x):
         output = self.main(x)
         return output
+
+    # def weights_init_uniform_rule(self):
+    #     for m in self.modules():
+    #         if isinstance(m, nn.Linear):
+    #             n = m.in_features
+    #             y = 1.0 / np.sqrt(n)
+    #             m.weight.data.uniform_(-y, y)
+    #             m.bias.data.fill_(0)
+
+    def weights_init_uniform_rule(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_uniform_(m.weight, nonlinearity='relu')
 
 
 def save_metrics(metrics, filename='metrics.txt'):
@@ -73,24 +120,33 @@ def save_metrics(metrics, filename='metrics.txt'):
 
 if __name__ == '__main__':
 
+    start_time = time.time()
+
     CSD = os.path.dirname(__file__)
     BDR = os.path.dirname(CSD)
 
     DATA_FOLDER = os.path.join(BDR, "data")
     RESULTS_FOLDER = os.path.join(BDR, "_results", f"ik_nn_{args.results_suffix}")
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
-    PATH_TO_CKPT = os.path.join(BDR, "models")
+    PATH_TO_CKPT = RESULTS_FOLDER
 
     NUM_EPOCHS = args.num_epochs
     BATCH_SIZE = args.batch_size
     LEARNING_RATE = args.lr
+    EPOCH_ZETA = args.zeta_factor * NUM_EPOCHS
+    ZETA = args.zeta
     Print_Model_Summary = False
 
     # Preparing the dataset
     data = np.load(os.path.join(DATA_FOLDER, "DataN200.npy"))
 
-    X = data[:, 2:4]
-    y = data[:, 0:2]
+    # Input and output for inverse problem
+    X = data[:, 2:4]  # Position
+    y = data[:, 0:2]  # Thetas
+
+    # # Input and output for forward problem
+    # X = data[:, 0:2]  # Thetas
+    # y = data[:, 2:4]  # Position
 
     tr_ratio = 0.70
     val_ratio = 0.15
@@ -109,6 +165,14 @@ if __name__ == '__main__':
     y_val = torch.from_numpy(y_val).float()
     y_test = torch.from_numpy(y_test).float()
 
+    # Creating the normalizer from train dataset
+    X_normalizer = Normalization(X_train)
+
+    # Normalizing the inputs
+    X_train = X_normalizer.normalize(X_train)
+    X_val = X_normalizer.normalize(X_val)
+    X_test = X_normalizer.normalize(X_test)
+
     tr_opt = {'batch_size': BATCH_SIZE, 'shuffle': True, 'pin_memory': True}
     test_val_opt = {'batch_size': BATCH_SIZE, 'shuffle': False, 'pin_memory': True}
 
@@ -119,13 +183,17 @@ if __name__ == '__main__':
 
     # Model instance and print summary
     INV_MODEL1 = inv2r_nn().to(DEVICE)
+    INV_MODEL1.weights_init_uniform_rule()
+    # FWD_MODEL = fk().to(DEVICE)
     input_shape = (7, 2)
     summary(INV_MODEL1, input_size=input_shape, col_names=[
             'input_size', 'output_size']) if Print_Model_Summary else None
 
     # Loss function and optimizer
-    mse_loss = torch.nn.MSELoss()  # Mean Squared Error Loss
-    optimizer = optim.SGD(INV_MODEL1.parameters(), lr=LEARNING_RATE, momentum=0.9)
+    inv_loss = torch.nn.MSELoss()  # Mean Squared Error Loss
+    fwd_loss = torch.nn.MSELoss()  # Mean Squared Error Loss
+    # optimizer = optim.SGD(INV_MODEL1.parameters(), lr=LEARNING_RATE, momentum=0.9)
+    optimizer = torch.optim.Adam(INV_MODEL1.parameters(), lr=LEARNING_RATE)
 
     # Prepare dictionary to store metrics
     metrics = {'train_loss': [], 'val_loss': [], 'test_loss': []}
@@ -137,18 +205,28 @@ if __name__ == '__main__':
         tq_1 = f"[Epoch: {epoch+1:>3d}/{NUM_EPOCHS:<3d}]"
         INV_MODEL1.train()
         train_loss = 0.0
-        for batch_idx, (inputs, targets) in enumerate(train_dl):
-            inputs, targets = inputs.to(DEVICE), targets.to(DEVICE)
-            # Normalize the inputs if required! Here it is not required.
+
+        if (epoch > EPOCH_ZETA):
+            ZETA = 0.0
+
+        for batch_idx, (pos, theta) in enumerate(train_dl):
+            pos, theta = pos.to(DEVICE), theta.to(DEVICE)
+            # Normalize the pos if required! Here it is not required.
 
             # clear the gradients
             optimizer.zero_grad()
 
-            # Forward Pass - computre the model output
-            yhat = INV_MODEL1(inputs)
+            # Forward Pass - compute the model output
+            theta_pred = INV_MODEL1(pos)
+
+            # calculating the position using theta_pred
+            # pos_pred = fk(theta_pred[0], theta_pred[1]).to(DEVICE)
+
+            pos_pred_x, pos_pred_y = fk(theta_pred[:, 0], theta_pred[:, 1])
+            pos_pred = torch.stack([pos_pred_x, pos_pred_y], dim=1)
 
             # Loss calculation
-            loss = mse_loss(yhat, targets)
+            loss = inv_loss(pos_pred, pos) + ZETA * fwd_loss(theta_pred, theta)
 
             # backpass gradients
             loss.backward()
@@ -164,10 +242,13 @@ if __name__ == '__main__':
         INV_MODEL1.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for X, y in val_dl:
-                X, y = X.to(DEVICE), y.to(DEVICE)
-                yhat = INV_MODEL1(X)
-                loss = mse_loss(yhat, y)
+            for pos_val, theta_val in val_dl:
+                pos_val, theta_val = pos_val.to(DEVICE), theta_val.to(DEVICE)
+                theta_pred = INV_MODEL1(pos_val)
+                # pos_pred = fk(theta_pred[0], theta_pred[1]).to(DEVICE)
+                pos_pred_x, pos_pred_y = fk(theta_pred[:, 0], theta_pred[:, 1])
+                pos_pred = torch.stack([pos_pred_x, pos_pred_y], dim=1)
+                loss = inv_loss(pos_pred, pos_val) + ZETA * fwd_loss(theta_pred, theta_val)
                 val_loss += loss.item()
 
         train_loss /= len(train_dl)
@@ -211,11 +292,11 @@ if __name__ == '__main__':
 
     INV_MODEL1.eval()
     with torch.no_grad():
-        for X, y in test_dl:
-            X, y = X.to(DEVICE), y.to(DEVICE)
-            yhat = INV_MODEL1(X)
-            predictions.append(yhat.cpu())
-            actuals.append(y.cpu())
+        for pos_test, theta_test in test_dl:
+            pos_test, theta_test = pos_test.to(DEVICE), theta_test.to(DEVICE)
+            theta_test_pred = INV_MODEL1(pos_test)
+            predictions.append(theta_test_pred.cpu())
+            actuals.append(theta_test.cpu())
 
     # Convert lists to tensors
     predictions = torch.cat(predictions, dim=0)
@@ -247,6 +328,10 @@ if __name__ == '__main__':
         plt.legend()
         plt.grid(True)
         plt.savefig(os.path.join(RESULTS_FOLDER, f'parity_plot_{target_names[i]}.png'), dpi=300)
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"Total execution time: {total_time} seconds")
 
     # mae = [mean_absolute_error(actuals[:, i], predictions[:, i]) for i in range(num_targets)]
     # rmse = [np.sqrt(mean_squared_error(actuals[:, i], predictions[:, i])) for i in range(num_targets)]
