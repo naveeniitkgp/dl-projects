@@ -5,14 +5,18 @@ import matplotlib.pyplot as plt
 
 plot = True
 
+
 def implicit_equation(x, y):
     return x**2 + y**2 - 1
 
+
+data_folder = "N200_theta12_0-360"
+
 CURRENT_DIR = os.path.dirname(__file__)
 BASE_DIR = os.path.dirname(CURRENT_DIR)
-DATA_DIR = os.path.join(BASE_DIR, "data")
+DATA_DIR = os.path.join(BASE_DIR, "data", f"{data_folder}")
 
-data = np.load(os.path.join(DATA_DIR, "DataN200_theta1_+-180_theta2_0-180.npy"))
+data = np.load(os.path.join(DATA_DIR, "main_data.npy"))
 
 X = data[:, 2:4]  # Position
 y = data[:, 0:2]  # Thetas
@@ -29,14 +33,14 @@ if plot:
 
     # Plot workspace
     axs[1].scatter(y[:, 0], y[:, 1], marker='.')
-    axs[1].axhline(y = np.pi, color='r')  # Add the horizontal line
-    axs[1].axhline(y = -np.pi, color='r')  # Add the horizontal line
-    axs[1].axhline(y = 2*np.pi, color='r')  # Add the horizontal line
-    axs[1].axhline(y = -2*np.pi, color='r')  # Add the horizontal line
-    axs[1].axvline(x = np.pi, color='r')  # Add the horizontal line
-    axs[1].axvline(x = -np.pi, color='r')  # Add the horizontal line
-    axs[1].axvline(x = 2*np.pi, color='r')  # Add the horizontal line
-    axs[1].axvline(x = -2*np.pi, color='r')  # Add the horizontal line
+    axs[1].axhline(y=np.pi, color='r')  # Add the horizontal line
+    axs[1].axhline(y=-np.pi, color='r')  # Add the horizontal line
+    axs[1].axhline(y=2 * np.pi, color='r')  # Add the horizontal line
+    axs[1].axhline(y=-2 * np.pi, color='r')  # Add the horizontal line
+    axs[1].axvline(x=np.pi, color='r')  # Add the horizontal line
+    axs[1].axvline(x=-np.pi, color='r')  # Add the horizontal line
+    axs[1].axvline(x=2 * np.pi, color='r')  # Add the horizontal line
+    axs[1].axvline(x=-2 * np.pi, color='r')  # Add the horizontal line
     axs[1].set_xlabel(r'$\theta_1$')
     axs[1].set_ylabel(r'$\theta_2$')
     axs[1].grid(True)

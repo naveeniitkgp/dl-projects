@@ -136,7 +136,7 @@ if __name__ == '__main__':
     CSD = os.path.dirname(__file__)
     BDR = os.path.dirname(CSD)
 
-    data_name = "N200_theta12_0-360"
+    data_name = "N100_theta12_+-180"
 
     DATA_FOLDER = os.path.join(BDR, "data", f"{data_name}")
     RESULTS_FOLDER = os.path.join(BDR, "_results", f"ik_nn_{args.results_suffix}")

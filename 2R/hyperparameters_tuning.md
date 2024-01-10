@@ -35,13 +35,15 @@
 ### 2R
 - Plot for each test cases for
 	+ `Done` $\theta_1 \in \left( 0, 2\pi \right)$ and $\theta_2 \in \left( 0, 2\pi \right)$
-	+ `WIP` $\theta_1 \in \left( -\pi, \pi \right)$ and $\theta_2 \in \left( -\pi, \pi  \right)$
+	+ `Analysis left` $\theta_1 \in \left( -\pi, \pi \right)$ and $\theta_2 \in \left( -\pi, \pi  \right)$
 - Modify the code
 	+ `Done` add $\LaTeX$ codes for the plots in the main code.
-	+ add a code that saves the last saved `.pth` file separetly in a `.txt` file so that it will be easy to call in code rather than looking it everytime.
-	+ Include early stopping (to avoid overfitting)
+	+ `Not required` add a code that saves the last saved `.pth` file separetly in a `.txt` file so that it will be easy to call in code rather than looking it everytime.
+	+ `Not required` Include early stopping (to avoid overfitting)
 - Try with smaller size of layers and neurons.
-	+ User defined layers and  number of neuraons in each layers
+	+ `Done`User defined layers and  number of neuraons in each layers
+- There are more points towards the edges - check distribution of points
+	+ Try with generating $\left( r, \theta \right) \rightarrow \left( X, Y \right)$
 
 ### Fourbar
 - Think of generating the data
