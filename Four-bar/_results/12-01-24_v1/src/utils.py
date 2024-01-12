@@ -14,6 +14,12 @@ def save_metrics(metrics, filename='metrics.txt'):
             f.write(f"{key}: {values}\n")
 
 
+# def calculate_r2_scores(actuals, predictions, target_names):
+#     for i in range(len(target_names)):
+#         score = r2_score(actuals[:, i], predictions[:, i])
+#         print(f'R² score for {target_names[i]}: {score:.4f}')
+
+
 def calculate_r2_scores(actuals, predictions, target_names, folder_path):
     # Construct the file path
     file_path = f"{folder_path}/r_squared_scores.md"

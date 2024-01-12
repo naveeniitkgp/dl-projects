@@ -47,12 +47,12 @@ initial_guess_value = 1
 # print(f"For theta_1 = {theta_1_input}, phi_1 is approximately {phi_1_output[0]}")
 
 # Example to plot the result
-theta_1_values = np.linspace(0, 2 * np.pi, N)
-phi_1_values_1 = [fsolve(equation, initial_guess_value, args=(theta_1,))[0] for theta_1 in theta_1_values]
-phi_1_values_2 = [fsolve(equation, -initial_guess_value, args=(theta_1,))[0] for theta_1 in theta_1_values]
+phi_1_values = np.linspace(0, 2 * np.pi, N)
+theta_1_values_1 = [fsolve(equation, initial_guess_value, args=(theta_1,))[0] for theta_1 in phi_1_values]
+theta_1_values_2 = [fsolve(equation, -initial_guess_value, args=(theta_1,))[0] for theta_1 in phi_1_values]
 
-theta1 = np.concatenate([theta_1_values, theta_1_values])  # Input - Making two copies of theta_1 one below another
-phi = np.concatenate([phi_1_values_1, phi_1_values_2])  # Output
+theta1 = np.concatenate([phi_1_values, phi_1_values])  # Input - Making two copies of theta_1 one below another
+phi = np.concatenate([theta_1_values_1, theta_1_values_2])  # Output
 # Data_phi = np.column_stack((theta1, phi))
 
 # np.save(os.path.join(DATA_FOLDER_NAME, 'main.npy'), Data_phi)
@@ -74,10 +74,10 @@ ts_ratio = 1 - tr_ratio
 
 # Getting each point of the four bar
 C0 = np.zeros((N, 2))
-C1 = np.column_stack((L1 * np.cos(theta_1_values), L1 * np.sin(theta_1_values)))
+C1 = np.column_stack((L1 * np.cos(phi_1_values), L1 * np.sin(phi_1_values)))
 C3 = np.zeros((N, 2)) + [L0, 0]
-C2_sol1 = C3 + np.column_stack((L3 * np.cos(phi_1_values_1), L3 * np.sin(phi_1_values_1)))
-C2_sol2 = C3 + np.column_stack((L3 * np.cos(phi_1_values_2), L3 * np.sin(phi_1_values_2)))
+C2_sol1 = C3 + np.column_stack((L3 * np.cos(theta_1_values_1), L3 * np.sin(theta_1_values_1)))
+C2_sol2 = C3 + np.column_stack((L3 * np.cos(theta_1_values_2), L3 * np.sin(theta_1_values_2)))
 
 # Getting a point on the coupler
 xy_ratio = 0.5  # Ratio that determines the position of the point on the coupler
@@ -131,8 +131,8 @@ if animate_4bar:
 plt.figure(figsize=(8, 8))
 
 plt.subplot(2, 2, 1)
-plt.plot(theta_1_values, phi_1_values_1, label=f'Solution 1')
-plt.plot(theta_1_values, phi_1_values_2, label=f'Solution 2')
+plt.plot(phi_1_values, theta_1_values_1, label=f'Solution 1')
+plt.plot(phi_1_values, theta_1_values_2, label=f'Solution 2')
 plt.xlabel(r'$\theta_1$ (rads)')
 plt.ylabel(r'$\phi_1$ (rads)')
 plt.title(r'$\phi_1$ vs $\theta_1$')
@@ -140,10 +140,10 @@ plt.grid(True)
 plt.legend()
 
 plt.subplot(2, 2, 2)
-plt.plot(theta_1_values, np.linalg.norm(C1 - C0, axis=1), label=f'Link 1')
-plt.plot(theta_1_values, np.linalg.norm(C1 - C2_sol1, axis=1), label=f'Link 2')
-plt.plot(theta_1_values, np.linalg.norm(C2_sol1 - C3, axis=1), label=f'Link 3')
-plt.plot(theta_1_values, np.linalg.norm(C3 - C0, axis=1), label=f'Link 0')
+plt.plot(phi_1_values, np.linalg.norm(C1 - C0, axis=1), label=f'Link 1')
+plt.plot(phi_1_values, np.linalg.norm(C1 - C2_sol1, axis=1), label=f'Link 2')
+plt.plot(phi_1_values, np.linalg.norm(C2_sol1 - C3, axis=1), label=f'Link 3')
+plt.plot(phi_1_values, np.linalg.norm(C3 - C0, axis=1), label=f'Link 0')
 plt.xlabel(r'$\theta_1$ (rads)')
 plt.ylabel(r'Link lengths')
 plt.title(r'Link lengths vs $\theta_1$')
